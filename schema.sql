@@ -1,0 +1,12 @@
+
+DROP TABLE IF EXISTS history;
+
+CREATE TABLE history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  script TEXT NOT NULL,
+  target TEXT NOT NULL,
+  parameters TEXT,
+  output TEXT NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
