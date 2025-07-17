@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - BlackBox Tools</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <a class="navbar-brand" href="#">
+            <span class="status-indicator online"></span>
+            BlackBox Tools
+        </a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <span class="navbar-text text-secondary mr-3">
+                        <span id="clock"></span>
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('history') }}">
+                        📊 Historique
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        🚪 Déconnexion
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-danger fade-in">
+              {{ messages[0] }}
+            </div>
+          {% endif %}
+        {% endwith %}
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">🎯 Exécution de Script</h5>
+                        <form action="{{ url_for('execute_script') }}" method="post">
+                            <div class="form-group">
+                                <label for="target">🌐 Cible (IP/Domaine)</label>
+                                <input type="text" class="form-control" id="target" name="target" 
+                                       value="{{ target if target else '' }}" 
+                                       placeholder="192.168.1.1 ou example.com" required>
+                                <small class="form-text text-muted">
+                                    Entrez une adresse IP ou un nom de domaine valide
+                                </small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="script">🔧 Script</label>
+                                <select class="form-control" id="script" name="script" required>
+                                    <option value="nmap" {% if script == 'nmap' %}selected{% endif %}>
+                                        🔍 Nmap (Scan de ports)
+                                    </option>
+                                    <option value="whois" {% if script == 'whois' %}selected{% endif %}>
+                                        📋 Whois (Infos DNS)
+                                    </option>
+                                    <option value="dig" {% if script == 'dig' %}selected{% endif %}>
+                                        🔎 Dig (Énumération DNS)
+                                    </option>
+                                    <option value="traceroute" {% if script == 'traceroute' %}selected{% endif %}>
+                                        🛤️ Traceroute
+                                    </option>
+                                    <option value="hydra" {% if script == 'hydra' %}selected{% endif %}>
+                                        🔐 Hydra (Brute-force SSH/FTP)
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="params">⚙️ Paramètres (optionnel)</label>
+                                <input type="text" class="form-control" id="params" name="params" 
+                                       value="{{ params if params else '' }}"
+                                       placeholder="-p 80,443 ou -sV">
+                                <small class="form-text text-muted">
+                                    Paramètres supplémentaires pour le script
+                                </small>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                🚀 Lancer l'exécution
+                            </button>
+                        </form>
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                💡 Raccourci: Ctrl+Entrée pour exécuter<br>
+                                💡 Double-clic sur la console pour copier
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6 class="card-title">🛠️ Actions rapides</h6>
+                        <button class="btn btn-sm btn-secondary btn-block mb-2" onclick="clearConsole()">
+                            🗑️ Effacer la console
+                        </button>
+                        <button class="btn btn-sm btn-info btn-block" onclick="downloadConsoleOutput()">
+                            💾 Télécharger la sortie
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            💻 Console de résultats
+                            {% if output %}
+                                <span class="badge badge-success ml-2">Résultats disponibles</span>
+                            {% else %}
+                                <span class="badge badge-secondary ml-2">En attente</span>
+                            {% endif %}
+                        </h5>
+                        
+                        <textarea class="form-control console" rows="25" readonly 
+                                  placeholder="Les résultats de l'exécution apparaîtront ici...&#10;&#10;💡 Conseils:&#10;• Double-cliquez pour copier le contenu&#10;• Utilisez Échap pour effacer&#10;• Les résultats sont automatiquement sauvegardés">{{ output if output else '' }}</textarea>
+                        
+                        {% if output %}
+                        <div class="mt-3">
+                            <small class="text-success">
+                                ✅ Exécution terminée • Résultats sauvegardés dans l'historique
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">ℹ️ Informations système</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <small class="text-muted">Statut:</small><br>
+                                <span class="status-online">🟢 En ligne</span>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Scripts disponibles:</small><br>
+                                <span class="text-info">5 outils</span>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Sécurité:</small><br>
+                                <span class="text-warning">🔒 Filtrage actif</span>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted">Session:</small><br>
+                                <span class="text-success">✅ Authentifié</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

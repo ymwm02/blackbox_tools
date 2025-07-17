@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique - BlackBox Tools</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <a class="navbar-brand" href="#">
+            <span class="status-indicator online"></span>
+            BlackBox Tools
+        </a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <span class="navbar-text text-secondary mr-3">
+                        <span id="clock"></span>
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">
+                        🏠 Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        🚪 Déconnexion
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    📊 Historique des exécutions
+                    <span class="badge badge-info ml-2">{{ history_entries|length }} entrées</span>
+                </h5>
+                
+                {% if history_entries %}
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>🆔 ID</th>
+                                <th>🔧 Script</th>
+                                <th>🌐 Cible</th>
+                                <th>📅 Horodatage</th>
+                                <th>⚡ Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in history_entries %}
+                            <tr>
+                                <td>
+                                    <span class="badge badge-secondary">#{{ entry.id }}</span>
+                                </td>
+                                <td>
+                                    {% if entry.script == 'nmap' %}
+                                        🔍 Nmap
+                                    {% elif entry.script == 'whois' %}
+                                        📋 Whois
+                                    {% elif entry.script == 'dig' %}
+                                        🔎 Dig
+                                    {% elif entry.script == 'traceroute' %}
+                                        🛤️ Traceroute
+                                    {% elif entry.script == 'hydra' %}
+                                        🔐 Hydra
+                                    {% else %}
+                                        {{ entry.script }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <code>{{ entry.target }}</code>
+                                </td>
+                                <td>
+                                    <small>{{ entry.timestamp }}</small>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('view_history_entry', entry_id=entry.id) }}" 
+                                       class="btn btn-sm btn-info mr-1">
+                                        👁️ Voir
+                                    </a>
+                                    <a href="{{ url_for('download_report', entry_id=entry.id) }}" 
+                                       class="btn btn-sm btn-success">
+                                        💾 Télécharger
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <h4 class="text-muted">📭 Aucun historique disponible</h4>
+                    <p class="text-muted">
+                        Exécutez votre premier script depuis le dashboard pour voir l'historique ici.
+                    </p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary">
+                        🚀 Aller au Dashboard
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if history_entries %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6 class="card-title">ℹ️ Statistiques</h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <small class="text-muted">Total d'exécutions:</small><br>
+                        <span class="text-info">{{ history_entries|length }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Dernière exécution:</small><br>
+                        <span class="text-success">{{ history_entries[0].timestamp if history_entries else 'N/A' }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Script le plus utilisé:</small><br>
+                        <span class="text-warning">
+                            {% set script_counts = {} %}
+                            {% for entry in history_entries %}
+                                {% if script_counts.update({entry.script: script_counts.get(entry.script, 0) + 1}) %}{% endif %}
+                            {% endfor %}
+                            {% if script_counts %}
+                                {{ script_counts.keys() | list | first }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted">Statut:</small><br>
+                        <span class="status-online">🟢 Système opérationnel</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+
